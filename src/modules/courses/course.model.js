@@ -12,7 +12,17 @@ const courseSchema = new mongoose.Schema(
     fee: { type: Number, required: true, min: 0 },
     isActive: { type: Boolean, default: true },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform(_doc, ret) {
+        ret.id = ret._id.toString();
+        delete ret._id;
+        delete ret.__v;
+      },
+    },
+  }
 );
 
 module.exports = mongoose.model('Course', courseSchema);
