@@ -5,10 +5,11 @@
  * Idempotent per domain — re-running skips any collection that already has
  * data, so it's safe to run repeatedly without duplicating records.
  *
- * Covers: system roles, Super Admin + two demo staff accounts, settings,
- * courses, intakes, applications (spanning every status), invoices,
- * gallery items, testimonials, FAQs, announcements, inquiries, and a small
- * set of illustrative audit log entries.
+ * Covers: system roles, Super Admin + two demo staff accounts (Registrar,
+ * Finance) — all three always created with fixed demo credentials unless
+ * overridden by env vars — plus settings, courses, intakes, applications
+ * (spanning every status), invoices, gallery items, testimonials, FAQs,
+ * announcements, inquiries, and a small set of illustrative audit log entries.
  *
  * Does NOT call Cloudinary, Mailjet, or Puppeteer — those require real
  * credentials/network access this script can't assume are present. Anywhere
@@ -19,8 +20,8 @@
  *
  * Usage: node scripts/seed.js
  * Optional env vars: SEED_SUPER_ADMIN_EMAIL / SEED_SUPER_ADMIN_PASSWORD /
- * SEED_SUPER_ADMIN_NAME — if unset, Super Admin creation is skipped (system
- * roles and all other demo data still seed regardless).
+ * SEED_SUPER_ADMIN_NAME — override the Super Admin's fixed demo credentials
+ * if set; Super Admin is created either way.
  */
 
 require('dotenv').config();
@@ -106,15 +107,19 @@ async function createUserIfMissing({ name, email, password, roleId }) {
   return user;
 }
 
+/**
+ * Always creates a Super Admin, same as the Registrar/Finance demo accounts —
+ * not gated behind whether env vars are set. SEED_SUPER_ADMIN_EMAIL /
+ * SEED_SUPER_ADMIN_PASSWORD / SEED_SUPER_ADMIN_NAME, if set, override the
+ * fixed demo credentials below (useful for a real environment where you want
+ * a specific Super Admin identity); if unset, the fixed demo credentials are
+ * used, exactly like Registrar/Finance already do.
+ */
 async function seedSuperAdmin(superAdminRole) {
-  const email = process.env.SEED_SUPER_ADMIN_EMAIL;
-  const password = process.env.SEED_SUPER_ADMIN_PASSWORD;
-  const name = process.env.SEED_SUPER_ADMIN_NAME || 'Super Admin';
+  const email = process.env.SEED_SUPER_ADMIN_EMAIL || 'superadmin@liko.test';
+  const password = process.env.SEED_SUPER_ADMIN_PASSWORD || 'SuperAdminDemo123!';
+  const name = process.env.SEED_SUPER_ADMIN_NAME || 'Liko Super Admin';
 
-  if (!email || !password) {
-    log('SEED_SUPER_ADMIN_EMAIL / SEED_SUPER_ADMIN_PASSWORD not set — skipping Super Admin creation');
-    return null;
-  }
   return createUserIfMissing({ name, email, password, roleId: superAdminRole._id });
 }
 
@@ -546,11 +551,9 @@ async function run() {
   await mongoose.connection.close().catch(() => {});
 
   log('Done. Demo login credentials (dev/demo use only):');
-  log('  Registrar — registrar@liko.test / RegistrarDemo123!');
-  log('  Finance   — finance@liko.test / FinanceDemo123!');
-  if (!process.env.SEED_SUPER_ADMIN_EMAIL) {
-    log('  Super Admin — not created (set SEED_SUPER_ADMIN_EMAIL / SEED_SUPER_ADMIN_PASSWORD to create one)');
-  }
+  log('  Super Admin — superadmin@liko.test / SuperAdminDemo123! (or your SEED_SUPER_ADMIN_* env vars, if set)');
+  log('  Registrar   — registrar@liko.test / RegistrarDemo123!');
+  log('  Finance     — finance@liko.test / FinanceDemo123!');
   process.exit(0);
 }
 
