@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; font-size: 12px; }
+  .header { border-bottom: 3px solid #0b3d2e; padding-bottom: 12px; margin-bottom: 20px; }
+  .header h1 { color: #0b3d2e; margin: 0 0 4px 0; font-size: 22px; }
+  .header p { margin: 2px 0; color: #555; }
+  .badge { display: inline-block; background: #146c3f; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-top: 6px; }
+  .ref-box { background: #f0f8f3; border: 1px solid #cfe8da; border-radius: 6px; padding: 14px 18px; margin: 18px 0; }
+  .ref-box .code { font-size: 18px; font-weight: bold; color: #146c3f; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e2e2; }
+  th { background: #f0f8f3; color: #146c3f; }
+  .total-row td { font-weight: bold; border-top: 2px solid #146c3f; }
+  .confirm-box { margin-top: 20px; padding: 14px 18px; background: #eefcf3; border: 1px solid #b9e6c9; border-radius: 6px; }
+  .footer { margin-top: 30px; font-size: 10px; color: #888; border-top: 1px solid #eee; padding-top: 10px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Liko Security Training</h1>
+    <p>KwaMajova, opposite Cashbuild, Mount Frere</p>
+    <p>PSIRA No. 4509070 | Centre No. 4333985 | Reg. 2022/302006/07</p>
+    <span class="badge">OFFICIAL PAYMENT INVOICE / RECEIPT</span>
+  </div>
+
+  <p>Dear <%= applicantName %>,</p>
+  <p>We confirm that your payment has been received and verified. Your enrollment is now confirmed.</p>
+
+  <div class="ref-box">
+    <div>Reference</div>
+    <div class="code"><%= referenceCode %></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Item</th><th style="text-align:right;">Amount</th></tr>
+    </thead>
+    <tbody>
+      <% courses.forEach(function(course) { %>
+      <tr>
+        <td>Grade <%= course.grade %> — <%= course.title %></td>
+        <td style="text-align:right;">R<%= course.fee.toFixed(2) %></td>
+      </tr>
+      <% }); %>
+      <tr>
+        <td>PSIRA Registration Fee</td>
+        <td style="text-align:right;">R<%= psiraFee.toFixed(2) %></td>
+      </tr>
+      <tr class="total-row">
+        <td>Total Amount Paid</td>
+        <td style="text-align:right;">R<%= totalAmount.toFixed(2) %></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="confirm-box">
+    <p><strong>Enrollment Confirmed</strong></p>
+    <p>Intake: <%= intakeTitle %></p>
+    <p>Start Date: <%= startDate %></p>
+  </div>
+
+  <p style="margin-top:20px;">Please keep this document as proof of payment and enrollment. We look forward to welcoming you to training.</p>
+
+  <div class="footer">
+    <p>Issued: <%= issuedAt %> | Liko Security Training | 039 255 1632 | 073 074 9820</p>
+  </div>
+</body>
+</html>

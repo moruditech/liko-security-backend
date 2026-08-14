@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; font-size: 12px; }
+  .header { border-bottom: 3px solid #0b3d2e; padding-bottom: 12px; margin-bottom: 20px; }
+  .header h1 { color: #0b3d2e; margin: 0 0 4px 0; font-size: 22px; }
+  .header p { margin: 2px 0; color: #555; }
+  .badge { display: inline-block; background: #0b3d2e; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-top: 6px; }
+  .ref-box { background: #f4f7f5; border: 1px solid #d8e2dc; border-radius: 6px; padding: 14px 18px; margin: 18px 0; }
+  .ref-box .code { font-size: 18px; font-weight: bold; color: #0b3d2e; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e2e2; }
+  th { background: #f4f7f5; color: #0b3d2e; }
+  .total-row td { font-weight: bold; border-top: 2px solid #0b3d2e; }
+  .banking { margin-top: 24px; padding: 14px 18px; background: #fdf7ec; border: 1px solid #eadfc4; border-radius: 6px; }
+  .banking h3 { margin-top: 0; color: #7a5c00; }
+  .footer { margin-top: 30px; font-size: 10px; color: #888; border-top: 1px solid #eee; padding-top: 10px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Liko Security Training</h1>
+    <p>KwaMajova, opposite Cashbuild, Mount Frere</p>
+    <p>PSIRA No. 4509070 | Centre No. 4333985 | Reg. 2022/302006/07</p>
+    <span class="badge">PRO-FORMA INVOICE / REGISTRATION SUMMARY</span>
+  </div>
+
+  <p>Dear <%= applicantName %>,</p>
+  <p>Thank you for applying to Liko Security Training. Please find your registration summary and payment reference below.</p>
+
+  <div class="ref-box">
+    <div>Payment Reference</div>
+    <div class="code"><%= referenceCode %></div>
+    <p style="margin-top:8px;">Please use this exact reference when making your EFT payment, so it can be matched to your application.</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Item</th><th style="text-align:right;">Amount</th></tr>
+    </thead>
+    <tbody>
+      <% courses.forEach(function(course) { %>
+      <tr>
+        <td>Grade <%= course.grade %> — <%= course.title %></td>
+        <td style="text-align:right;">R<%= course.fee.toFixed(2) %></td>
+      </tr>
+      <% }); %>
+      <tr>
+        <td>PSIRA Registration Fee</td>
+        <td style="text-align:right;">R<%= psiraFee.toFixed(2) %></td>
+      </tr>
+      <tr class="total-row">
+        <td>Total Amount Due</td>
+        <td style="text-align:right;">R<%= totalAmount.toFixed(2) %></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="banking">
+    <h3>Banking Details</h3>
+    <% bankAccounts.forEach(function(acc) { %>
+      <p><strong><%= acc.bankName %></strong> — Account: <%= acc.accountNumber %> | Branch Code: <%= acc.branchCode %></p>
+    <% }); %>
+    <p><strong>Reference:</strong> <%= referenceCode %> (required)</p>
+  </div>
+
+  <p style="margin-top:20px;">Once your payment has been verified, you will receive an official Payment Invoice / Receipt confirming your enrollment.</p>
+
+  <div class="footer">
+    <p>Issued: <%= issuedAt %> | Liko Security Training | 039 255 1632 | 073 074 9820</p>
+  </div>
+</body>
+</html>
