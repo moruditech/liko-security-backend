@@ -26,7 +26,7 @@ function setRefreshCookie(res, token) {
   res.cookie(REFRESH_COOKIE_NAME, token, {
     httpOnly: true,
     secure: env.isProduction,
-    sameSite: 'lax',
+    sameSite: 'none',
     maxAge: REFRESH_COOKIE_MAX_AGE_MS,
     path: REFRESH_COOKIE_PATH,
   });
@@ -36,7 +36,7 @@ function clearRefreshCookie(res) {
   res.clearCookie(REFRESH_COOKIE_NAME, {
     httpOnly: true,
     secure: env.isProduction,
-    sameSite: 'lax',
+    sameSite: 'none',
     path: REFRESH_COOKIE_PATH,
   });
 }
