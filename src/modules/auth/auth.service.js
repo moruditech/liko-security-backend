@@ -28,6 +28,28 @@ const MFA_PENDING_TOKEN_TTL = '5m';
  */
 const INVALID_CREDENTIALS = () => ApiError.unauthorized('Invalid email or password');
 
+/**
+ * Shapes the `user` object sent to the frontend after login/MFA/refresh.
+ * Must stay in sync with the frontend's AuthUser type (types/api.ts): id,
+ * name, email, role (name string), permissions (string[]). The frontend's
+ * PermissionGate reads `permissions` straight off this object with no
+ * fallback, so any field missing here throws client-side
+ * ("Cannot read properties of undefined (reading 'includes')") the moment
+ * the admin shell renders after login.
+ *
+ * `user.role` must already be a populated Role document (not a bare
+ * ObjectId) before calling this, since `.permissions` is read off it.
+ */
+async function buildAuthUserDto(user) {
+  return {
+    id: user._id.toString(),
+    name: user.name,
+    email: await encryption.decrypt(user.email_enc),
+    role: user.role.name,
+    permissions: user.role.permissions,
+  };
+}
+
 async function login({ email, password }, ipAddress) {
   const emailBidx = await blindIndex.computeBlindIndex(email);
   const user = await User.findOne({ email_bidx: emailBidx }).select('+passwordHash +mfaSecret_enc').populate('role');
@@ -100,11 +122,7 @@ async function issueSessionAndRecordLogin(user, ipAddress) {
   return {
     accessToken,
     refreshToken,
-    user: {
-      id: user._id.toString(),
-      name: user.name,
-      role: user.role.name,
-    },
+    user: await buildAuthUserDto(user),
   };
 }
 
@@ -117,7 +135,7 @@ async function refresh({ refreshToken }) {
   }
 
   const tokenHash = hashToken(refreshToken);
-  const user = await User.findById(decoded.sub);
+  const user = await User.findById(decoded.sub).populate('role');
 
   if (!user || !user.isActive) {
     throw ApiError.unauthorized('Invalid or expired refresh token');
@@ -129,8 +147,13 @@ async function refresh({ refreshToken }) {
     throw ApiError.unauthorized('Refresh token has been revoked');
   }
 
-  const accessToken = signAccessToken({ sub: user._id.toString(), role: user.role.toString() });
-  return { accessToken };
+  // `user` was previously returned without this DTO, so AuthProvider's
+  // doRefresh() left the frontend's `user` state as null on every hard
+  // reload of /admin (result.user was undefined), which silently hid every
+  // permission-gated nav item and blanked the signed-in name despite a
+  // perfectly valid session.
+  const accessToken = signAccessToken({ sub: user._id.toString(), role: user.role._id.toString() });
+  return { accessToken, user: await buildAuthUserDto(user) };
 }
 
 /**
