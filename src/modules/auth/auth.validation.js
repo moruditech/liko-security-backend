@@ -3,7 +3,7 @@
 const Joi = require('joi');
 
 const login = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email({ tlds: { allow: false } }).required(),
   password: Joi.string().required(),
 });
 
@@ -16,7 +16,7 @@ const refresh = Joi.object({
 });
 
 const forgotPassword = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email({ tlds: { allow: false } }).required(),
 });
 
 const resetPassword = Joi.object({
