@@ -20,9 +20,14 @@ async function toSafeJSON(userDoc) {
     id: obj._id,
     name: obj.name,
     email,
-    role: obj.role,
+    // obj.role is the populated Role subdocument ({_id, name, permissions})
+    // at every call site below, never a bare ObjectId — trimmed to {id, name}
+    // since that's all the admin UI needs (table display + the role <select>
+    // in UserEditForm, matched by id). Sending the raw object crashed
+    // UserManagementTable, which rendered it directly as a string.
+    role: { id: obj.role._id.toString(), name: obj.role.name },
     mfaEnabled: obj.mfaEnabled,
-    isActive: obj.isActive,
+    active: obj.isActive,
     lastLogin: obj.lastLogin,
     createdAt: obj.createdAt,
   };
