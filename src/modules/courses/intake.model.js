@@ -14,6 +14,9 @@ const intakeSchema = new mongoose.Schema(
       validate: { validator: (arr) => arr.length > 0, message: 'At least one applicable grade is required' },
     },
     isActive: { type: Boolean, default: true },
+    // Per-intake capacity override. If set, takes precedence over the sum
+    // of course.capacity values for applicable grades. null = use course default.
+    capacity: { type: Number, default: null, min: 1 },
   },
   { timestamps: true }
 );

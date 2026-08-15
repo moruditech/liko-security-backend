@@ -15,6 +15,7 @@ const createCourse = Joi.object({
   description: Joi.string().allow('').max(2000),
   duration: Joi.string().trim().required(),
   fee: Joi.number().min(0).required(),
+  capacity: Joi.number().integer().min(1).default(null).allow(null),
 });
 
 const updateCourse = Joi.object({
@@ -24,6 +25,7 @@ const updateCourse = Joi.object({
   duration: Joi.string().trim(),
   fee: Joi.number().min(0),
   isActive: Joi.boolean(),
+  capacity: Joi.number().integer().min(1).allow(null),
 }).min(1);
 
 const createIntake = Joi.object({
@@ -37,6 +39,7 @@ const updateIntake = Joi.object({
   startDate: Joi.date().iso(),
   applicableGrades: Joi.array().items(Joi.string().valid(...Object.values(COURSE_GRADE))).min(1),
   isActive: Joi.boolean(),
+  capacity: Joi.number().integer().min(1).allow(null),
 }).min(1);
 
 const paramsId = Joi.object({ id: objectId.required() });
