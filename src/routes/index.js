@@ -21,6 +21,7 @@ const { publicRouter: publicInquiryRouter, adminRouter: adminInquiryRouter } = r
 const { publicRouter: publicAnnouncementRouter, adminRouter: adminAnnouncementRouter } = require('../modules/announcements/announcement.routes');
 const { publicRouter: publicSettingsRouter, adminRouter: adminSettingsRouter } = require('../modules/settings/settings.routes');
 const auditLogRoutes = require('../modules/auditLogs/auditLog.routes');
+const analyticsRoutes = require('../modules/analytics/analytics.routes');
 
 const router = express.Router();
 
@@ -49,5 +50,6 @@ router.use('/admin/announcements', adminAnnouncementRouter);
 router.use('/settings', publicSettingsRouter);
 router.use('/admin/settings', adminSettingsRouter);
 router.use('/admin/audit-logs', auditLogRoutes);
+router.use('/admin/analytics', analyticsRoutes);
 
 module.exports = router;
