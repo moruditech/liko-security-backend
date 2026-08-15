@@ -17,15 +17,21 @@ const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // mirrors JWT_REFRES
  * on cookie jars — the cookie is additive, not a replacement of the existing
  * response shape.
  *
- * secure:false is permitted outside production so local HTTP development
- * (no TLS on localhost) still receives the cookie — browsers silently drop
- * Secure cookies on a non-HTTPS origin, which would otherwise make this
- * impossible to test without a local TLS setup.
+ * SameSite=None is required for cross-origin deployments (frontend on
+ * Netlify, backend on Render). Browsers silently drop SameSite=None cookies
+ * that are not also marked Secure, so secure is hardcoded to true — Render
+ * always serves over HTTPS regardless of NODE_ENV. If NODE_ENV is not set to
+ * 'production' on Render, env.isProduction is false and the previous
+ * secure:env.isProduction would have caused the browser to drop the cookie
+ * entirely, breaking the refresh flow.
+ *
+ * For local HTTP development, use a tool like mkcert or set HTTPS=true, or
+ * test the refresh flow via the JSON body token (non-browser path) instead.
  */
 function setRefreshCookie(res, token) {
   res.cookie(REFRESH_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: env.isProduction,
+    secure: true,
     sameSite: 'none',
     maxAge: REFRESH_COOKIE_MAX_AGE_MS,
     path: REFRESH_COOKIE_PATH,
@@ -35,7 +41,7 @@ function setRefreshCookie(res, token) {
 function clearRefreshCookie(res) {
   res.clearCookie(REFRESH_COOKIE_NAME, {
     httpOnly: true,
-    secure: env.isProduction,
+    secure: true,
     sameSite: 'none',
     path: REFRESH_COOKIE_PATH,
   });
