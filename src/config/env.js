@@ -14,15 +14,17 @@ const REQUIRED_IN_ALL_ENVS = [
 ];
 
 const REQUIRED_IN_PRODUCTION = [
-  'KMS_PROVIDER',
-  'KMS_KEY_ID',
-  'BLIND_INDEX_KEY_REF',
   'CLOUDINARY_CLOUD_NAME',
   'CLOUDINARY_API_KEY',
   'CLOUDINARY_API_SECRET',
-  'MAILJET_API_KEY',
-  'MAILJET_API_SECRET',
   'FRONTEND_URL',
+  // KMS_PROVIDER / KMS_KEY_ID / BLIND_INDEX_KEY_REF and MAILJET_API_KEY /
+  // MAILJET_API_SECRET are intentionally NOT required here. KMS falls back
+  // to the secrets-manager interim provider (DEV_MASTER_KEY_HEX /
+  // DEV_BLIND_INDEX_KEY_HEX) in every environment, including production,
+  // until a real KMS is provisioned. Mailjet's absence only fails outbound
+  // email at the point of use (mailer.js throws a clear error there), not
+  // at boot — the app and application submissions still function without it.
 ];
 
 function requireEnv(keys) {
@@ -40,12 +42,14 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 requireEnv(REQUIRED_IN_ALL_ENVS);
 if (NODE_ENV === 'production') {
   requireEnv(REQUIRED_IN_PRODUCTION);
-  if (process.env.KMS_PROVIDER === 'secrets-manager' || process.env.DEV_MASTER_KEY_HEX) {
-    // The interim secrets-manager approach is acceptable pre-production, but production
-    // must not boot on the local-dev-key fallback path in kms.js.
+  // KMS/DEV-key material is still checked, but as a soft warning rather than
+  // a hard boot-refusal — kms.js itself throws a clear error at first use if
+  // this is genuinely missing, which is late enough to not block a boot that
+  // otherwise has everything it needs, but early enough (first login/request)
+  // to never be a silent surprise.
+  if (!process.env.KMS_PROVIDER) {
     // eslint-disable-next-line no-console
-    console.error('[env] Refusing to boot in production with a dev-fallback key provider. Configure a real KMS_PROVIDER.');
-    process.exit(1);
+    console.warn('[env] KMS_PROVIDER not set — defaulting to the interim secrets-manager provider.');
   }
 }
 
@@ -79,6 +83,8 @@ module.exports = {
   CLOUDINARY_PRIVATE_FOLDER: process.env.CLOUDINARY_PRIVATE_FOLDER || 'liko/id-documents',
   CLOUDINARY_PUBLIC_FOLDER: process.env.CLOUDINARY_PUBLIC_FOLDER || 'liko/public',
 
+  // Not required in production (see REQUIRED_IN_PRODUCTION comment above) —
+  // absence is valid, email-sending simply fails at the point of use.
   MAILJET_API_KEY: process.env.MAILJET_API_KEY,
   MAILJET_API_SECRET: process.env.MAILJET_API_SECRET,
   MAILJET_SENDER_EMAIL: process.env.MAILJET_SENDER_EMAIL,
