@@ -17,7 +17,18 @@ const roleSchema = new mongoose.Schema(
     },
     isSystemRole: { type: Boolean, default: false }, // FR-USR-04 — protected from deletion
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: false,
+      transform: (_doc, ret) => {
+        ret.id = ret._id.toString();
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+      },
+    },
+  }
 );
 
 module.exports = mongoose.model('Role', roleSchema);
