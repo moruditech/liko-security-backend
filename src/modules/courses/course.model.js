@@ -16,7 +16,15 @@ const courseSchema = new mongoose.Schema(
     // have no intake-level capacity override.
     capacity: { type: Number, default: null, min: 1 },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    // Mongoose 8 does not include the `id` virtual in toJSON output unless
+    // virtuals: true is set. Without this, course.id is undefined on the
+    // frontend, causing all courses to share the same undefined id — which
+    // makes clicking one checkbox appear to select/deselect all of them, and
+    // causes coursesSelected to submit as [null] which fails Joi validation.
+    toJSON: { virtuals: true },
+  }
 );
 
 module.exports = mongoose.model('Course', courseSchema);

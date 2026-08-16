@@ -18,7 +18,13 @@ const intakeSchema = new mongoose.Schema(
     // of course.capacity values for applicable grades. null = use course default.
     capacity: { type: Number, default: null, min: 1 },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    // Same Mongoose 8 issue as course.model.js — intake.id is used as the
+    // <option value> in IntakeSelector; without this it would be undefined,
+    // causing preferredIntake to submit as empty and fail validation.
+    toJSON: { virtuals: true },
+  }
 );
 
 /**
