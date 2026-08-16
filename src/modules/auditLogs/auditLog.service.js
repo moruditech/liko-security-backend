@@ -2,6 +2,25 @@
 
 const AuditLog = require('./auditLog.model');
 
+// listAuditLogs was returning raw Mongoose documents: only `_id` (not `id`),
+// and `actor` as either null or, after .populate('actor', 'name'), a
+// {_id, name} object — AuditLogTable renders `entry.actor` directly as a
+// table cell, which crashes on any row with a real actor (React: "Objects
+// are not valid as a React child"). Also renamed timestamp -> createdAt to
+// match the frontend's AuditLogEntry type (this schema has
+// { timestamps: false } and uses its own explicit `timestamp` field).
+function toJSON(doc) {
+  const obj = doc.toObject ? doc.toObject() : doc;
+  return {
+    id: obj._id.toString(),
+    actor: obj.actor && typeof obj.actor === 'object' ? { id: obj.actor._id.toString(), name: obj.actor.name } : null,
+    action: obj.action,
+    targetType: obj.targetType,
+    targetId: obj.targetId,
+    createdAt: obj.timestamp,
+  };
+}
+
 /**
  * The single write path for audit entries. Deliberately fire-and-forget-safe:
  * a logging failure must never take down the primary request (e.g. an admin
@@ -51,7 +70,7 @@ async function listAuditLogs({ actor, action, from, to, page = 1, limit = 50 }) 
     AuditLog.countDocuments(filter),
   ]);
 
-  return { items, total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) };
+  return { items: items.map(toJSON), total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) };
 }
 
 module.exports = { logAudit, listAuditLogs };
