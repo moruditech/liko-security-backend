@@ -22,7 +22,18 @@ async function toDecryptedJSON(doc) {
     phone,
     message: obj.message,
     status: obj.status,
-    replies: obj.replies,
+    // sentBy is required (every reply has a real admin sender, unlike
+    // statusHistory.changedBy which can be system-generated), so unlike
+    // that field this never needs a null branch — only populated-vs-raw,
+    // depending on whether the query populated 'replies.sentBy'.
+    replies: (obj.replies || []).map((r) => ({
+      message: r.message,
+      sentBy:
+        r.sentBy && typeof r.sentBy === 'object'
+          ? { id: r.sentBy._id.toString(), name: r.sentBy.name }
+          : { id: r.sentBy.toString(), name: null },
+      date: r.date,
+    })),
     createdAt: obj.createdAt,
   };
 }
@@ -66,7 +77,7 @@ async function listInquiries({ status, page = 1, limit = 20 }) {
 
 // Was missing — admin could only see inquiries via the list, never fetch one directly.
 async function getInquiryById(id) {
-  const inquiry = await Inquiry.findById(id);
+  const inquiry = await Inquiry.findById(id).populate('replies.sentBy', 'name');
   if (!inquiry) throw ApiError.notFound('Inquiry not found');
   return toDecryptedJSON(inquiry);
 }
@@ -88,6 +99,7 @@ async function replyToInquiry(id, message, actorId, actorName) {
   inquiry.replies.push({ message, sentBy: actorId, date: new Date() });
   inquiry.status = INQUIRY_STATUS.REPLIED; // FR-INQ-04
   await inquiry.save();
+  await inquiry.populate('replies.sentBy', 'name');
 
   await logAudit({ actor: actorId, action: 'inquiry.replied', targetType: 'Inquiry', targetId: id });
   return toDecryptedJSON(inquiry);
