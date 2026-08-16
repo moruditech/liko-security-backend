@@ -10,8 +10,7 @@ const { APPLICATION_STATUS } = require('../../shared/constants/enums');
 
 /**
  * multipart/form-data delivers nested/array fields as JSON strings by convention
- * on this API (documented for frontend integration) — parsed here before Joi
- * validation runs on req.body.
+ * on this API — parsed here before Joi validation runs on req.body.
  */
 function normalizeMultipartBody(req, res, next) {
   try {
@@ -29,21 +28,29 @@ function normalizeMultipartBody(req, res, next) {
 
 const submit = asyncHandler(async (req, res) => {
   if (!req.file) {
-    throw ApiError.badRequest('ID document is required'); // FR-APP-03
+    throw ApiError.badRequest('ID document is required');
   }
 
   const { application } = await applicationService.submitApplication(req.body, req.file);
 
-  // FR-APP-06 / NFR-PERF-03: pro-forma invoice PDF generated and emailed within
-  // this request. If this step fails, the application itself still exists and
-  // succeeded — we surface the error rather than silently swallowing it, since
-  // the applicant needs their reference code/PDF, but the submission is not rolled back.
-  await invoiceService.generateProformaInvoice(application._id);
-
+  // Respond immediately so the applicant sees the success popup without
+  // waiting for email delivery. Both emails (acknowledgement + invoice) are
+  // sent fire-and-forget — a Mailjet delay or failure never blocks the
+  // submission response or causes the popup not to appear.
   new ApiResponse(
     { referenceCode: application.referenceCode, applicationId: application._id },
     'Application submitted successfully'
   ).send(res, 201);
+
+  // Fire and forget — intentionally not awaited. Errors are caught and logged
+  // so they don't surface as unhandled rejections.
+  invoiceService.generateProformaInvoice(application._id).catch((err) => {
+    console.error('[invoice] Failed to create proforma invoice record', { applicationId: application._id, err });
+  });
+
+  invoiceService.sendApplicationEmails(application._id).catch((err) => {
+    console.error('[email] Failed to send application emails', { applicationId: application._id, err });
+  });
 });
 
 const list = asyncHandler(async (req, res) => {
@@ -57,12 +64,9 @@ const getById = asyncHandler(async (req, res) => {
 });
 
 const updateStatus = asyncHandler(async (req, res) => {
-  req.auditTarget = req.params.id; // consumed by auditAction if chained; service also logs directly
+  req.auditTarget = req.params.id;
   const application = await applicationService.updateApplicationStatus(req.params.id, req.body.status, req.user.id);
 
-  // FR-APP-09 / FR-INV-02: official invoice generated + emailed on payment_verified.
-  // generateOfficialInvoice() is internally idempotent — safe even if this route
-  // is somehow hit twice for the same transition.
   if (application.status === APPLICATION_STATUS.PAYMENT_VERIFIED) {
     await invoiceService.generateOfficialInvoice(application._id);
   }
