@@ -32,7 +32,7 @@
     "cookie-parser": "^1.4.6",
     "node-mailjet": "^6.0.6",
     "ejs": "^3.1.10",
-    "puppeteer": "^22.15.0",
+    "vellora": "latest",
     "speakeasy": "^2.0.0",
     "qrcode": "^1.5.4",
     "uuid": "^9.0.1",
