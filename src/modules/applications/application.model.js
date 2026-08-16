@@ -42,6 +42,13 @@ const applicationSchema = new mongoose.Schema(
     preferredIntake: { type: mongoose.Schema.Types.ObjectId, ref: 'Intake', required: true },
 
     idDocumentUrl: { type: String, required: true }, // Cloudinary private, signed delivery only
+    // Cloudinary's resolved resource_type for the uploaded document ('image'
+    // for JPEG/PNG/PDF, per Cloudinary's own auto-detection — never 'raw' or
+    // 'video' given ALLOWED_MIME_TYPES). Required at the API layer to build a
+    // private_download_url, which only accepts 'image'|'video'|'raw', not
+    // 'auto'. Defaults to 'image' for documents uploaded before this field
+    // existed, since every previously-accepted mime type resolves to 'image'.
+    idDocumentResourceType: { type: String, default: 'image' },
 
     // POPIA consent capture — Frontend TAD §14 gap #1. Required before an
     // application (which includes an ID number and ID document) can be

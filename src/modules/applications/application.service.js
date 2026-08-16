@@ -147,6 +147,7 @@ async function submitApplication(data, file) {
     coursesSelected: data.coursesSelected,
     preferredIntake: data.preferredIntake,
     idDocumentUrl: uploadResult.public_id, // store the Cloudinary public_id, not a raw URL — signed on demand
+    idDocumentResourceType: uploadResult.resource_type, // needed later to build a valid private_download_url (see model comment)
     // consentGiven is already guaranteed === true by Joi (submitApplication schema),
     // this call would never be reached otherwise. consentGivenAt is server-set
     // (request time), never trusted from the client — makes the timestamp
@@ -242,7 +243,10 @@ async function hasApplicationsForIntake(intakeId) {
 async function getSignedDocumentUrl(id) {
   const application = await Application.findById(id);
   if (!application) throw ApiError.notFound('Application not found');
-  return getSignedUrl(application.idDocumentUrl, { expiresInSeconds: 300 });
+  return getSignedUrl(application.idDocumentUrl, {
+    expiresInSeconds: 300,
+    resourceType: application.idDocumentResourceType,
+  });
 }
 
 module.exports = {
