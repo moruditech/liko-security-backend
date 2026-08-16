@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice & Payment Details – Liko Security Training</title>
+</head>
+<body style="margin:0;padding:0;background:#f2f4f3;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f2f4f3;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <tr>
+            <td style="background:#0b3d2e;padding:28px 32px;">
+              <p style="margin:0;font-size:20px;font-weight:bold;color:#ffffff;">Liko Security Training</p>
+              <p style="margin:4px 0 0;font-size:12px;color:#a8c8b8;">KwaMajova, opposite Cashbuild, Mount Frere</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#0f5238;padding:10px 32px;">
+              <span style="font-size:11px;color:#d4ede3;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Pro-Forma Invoice / Registration Summary</span>
+            </td>
+          </tr>
+
+          <!-- Already paid notice -->
+          <tr>
+            <td style="padding:16px 32px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#fffbea;border:1px solid #f0d070;border-radius:6px;">
+                <tr>
+                  <td style="padding:12px 16px;font-size:13px;color:#7a5c00;line-height:1.5;">
+                    <strong>Already paid?</strong> Please ignore this invoice. Your payment will be matched to your application automatically using your reference number.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:24px 32px 8px;">
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Dear <strong><%= applicantName %></strong>,</p>
+              <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
+                Thank you for your application. Please find your registration invoice and payment details below.
+              </p>
+
+              <!-- Reference -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7f5;border:1px solid #d0e4da;border-radius:6px;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:18px 20px;">
+                    <p style="margin:0 0 4px;font-size:12px;color:#555555;">Payment Reference</p>
+                    <p style="margin:0 0 8px;font-size:22px;font-weight:bold;color:#0b3d2e;letter-spacing:1px;"><%= referenceCode %></p>
+                    <p style="margin:0;font-size:12px;color:#666666;">Use this exact reference when making your EFT payment so it can be matched to your application.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Invoice table -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;padding:10px 12px;background:#f4f7f5;color:#0b3d2e;font-size:13px;border-bottom:2px solid #d0e4da;">Item</th>
+                    <th style="text-align:right;padding:10px 12px;background:#f4f7f5;color:#0b3d2e;font-size:13px;border-bottom:2px solid #d0e4da;">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% courses.forEach(function(course) { %>
+                  <tr>
+                    <td style="padding:10px 12px;font-size:14px;border-bottom:1px solid #eeeeee;">Grade <%= course.grade %> — <%= course.title %></td>
+                    <td style="padding:10px 12px;font-size:14px;text-align:right;border-bottom:1px solid #eeeeee;">R<%= course.fee.toFixed(2) %></td>
+                  </tr>
+                  <% }); %>
+                  <tr>
+                    <td style="padding:10px 12px;font-size:14px;border-bottom:1px solid #eeeeee;">PSIRA Registration Fee</td>
+                    <td style="padding:10px 12px;font-size:14px;text-align:right;border-bottom:1px solid #eeeeee;">R<%= psiraFee.toFixed(2) %></td>
+                  </tr>
+                  <tr>
+                    <td style="padding:12px;font-size:15px;font-weight:bold;border-top:2px solid #0b3d2e;color:#0b3d2e;">Total Amount Due</td>
+                    <td style="padding:12px;font-size:15px;font-weight:bold;border-top:2px solid #0b3d2e;text-align:right;color:#0b3d2e;">R<%= totalAmount.toFixed(2) %></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Banking details -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#fdf7ec;border:1px solid #eadfc4;border-radius:6px;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:18px 20px;">
+                    <p style="margin:0 0 14px;font-size:14px;font-weight:bold;color:#7a5c00;">Banking Details</p>
+                    <% bankAccounts.forEach(function(acc) { %>
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
+                      <tr><td style="font-size:13px;color:#333;padding-bottom:4px;"><strong><%= acc.bankName %></strong></td></tr>
+                      <% if (acc.accountName) { %>
+                      <tr><td style="font-size:13px;color:#555;">Account name: &nbsp;<strong><%= acc.accountName %></strong></td></tr>
+                      <% } %>
+                      <tr><td style="font-size:13px;color:#555;">Account number: &nbsp;<strong><%= acc.accountNumber %></strong></td></tr>
+                      <tr><td style="font-size:13px;color:#555;">Branch code: &nbsp;<strong><%= acc.branchCode %></strong></td></tr>
+                    </table>
+                    <% }); %>
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff8e6;border-radius:4px;">
+                      <tr>
+                        <td style="padding:10px 12px;font-size:13px;color:#7a5c00;">
+                          <strong>Reference (required):</strong> &nbsp;<%= referenceCode %>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#444444;">
+                Once your payment has been received and verified, you will receive an official receipt confirming your enrollment and training dates.
+              </p>
+
+              <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#444444;">
+                Questions? Call us on <a href="tel:0392551632" style="color:#0b3d2e;font-weight:bold;text-decoration:none;">039 255 1632</a> or <a href="tel:0730749820" style="color:#0b3d2e;font-weight:bold;text-decoration:none;">073 074 9820</a>.
+              </p>
+
+              <p style="margin:20px 0 4px;font-size:15px;line-height:1.6;">
+                Regards,<br/>
+                <strong>Liko Security Training</strong>
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 32px 20px;">
+              <p style="margin:0;font-size:12px;color:#999999;">Issued: <%= issuedAt %></p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#f4f7f5;border-top:1px solid #e0ebe5;padding:16px 32px;">
+              <p style="margin:0;font-size:11px;color:#888888;line-height:1.6;">
+                PSIRA No. 4509070 &nbsp;|&nbsp; Centre No. 4333985 &nbsp;|&nbsp; Reg. 2022/302006/07<br/>
+                This email was sent to <strong><%= applicantEmail %></strong> because you submitted an application on the Liko Security Training portal.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

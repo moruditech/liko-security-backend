@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Application Received – Liko Security Training</title>
+</head>
+<body style="margin:0;padding:0;background:#f2f4f3;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f2f4f3;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <tr>
+            <td style="background:#0b3d2e;padding:28px 32px;">
+              <p style="margin:0;font-size:20px;font-weight:bold;color:#ffffff;">Liko Security Training</p>
+              <p style="margin:4px 0 0;font-size:12px;color:#a8c8b8;">KwaMajova, opposite Cashbuild, Mount Frere</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#0f5238;padding:10px 32px;">
+              <span style="font-size:11px;color:#d4ede3;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Application Received</span>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:32px 32px 24px;">
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Dear <strong><%= applicantName %></strong>,</p>
+
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+                Thank you for applying to Liko Security Training. We have successfully received your application and it is currently under review.
+              </p>
+
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;">
+                Our team will review your documents and contact you as soon as possible. A separate email with your invoice and payment details has also been sent to you.
+              </p>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7f5;border:1px solid #d0e4da;border-radius:6px;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:18px 20px;">
+                    <p style="margin:0 0 4px;font-size:12px;color:#555555;">Your Application Reference</p>
+                    <p style="margin:0 0 8px;font-size:22px;font-weight:bold;color:#0b3d2e;letter-spacing:1px;"><%= referenceCode %></p>
+                    <p style="margin:0;font-size:12px;color:#666666;">Please quote this reference in any correspondence with us.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 12px;font-size:14px;font-weight:bold;color:#0b3d2e;">What happens next?</p>
+
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="padding:0 0 12px;">
+                  <table cellpadding="0" cellspacing="0"><tr>
+                    <td style="width:28px;vertical-align:top;padding-top:1px;">
+                      <span style="display:inline-block;width:20px;height:20px;background:#0b3d2e;color:#fff;border-radius:50%;font-size:11px;font-weight:bold;text-align:center;line-height:20px;">1</span>
+                    </td>
+                    <td style="font-size:14px;line-height:1.5;color:#333333;">We review your application and verify your documents.</td>
+                  </tr></table>
+                </td></tr>
+                <tr><td style="padding:0 0 12px;">
+                  <table cellpadding="0" cellspacing="0"><tr>
+                    <td style="width:28px;vertical-align:top;padding-top:1px;">
+                      <span style="display:inline-block;width:20px;height:20px;background:#0b3d2e;color:#fff;border-radius:50%;font-size:11px;font-weight:bold;text-align:center;line-height:20px;">2</span>
+                    </td>
+                    <td style="font-size:14px;line-height:1.5;color:#333333;">You make payment using the invoice and banking details we emailed you.</td>
+                  </tr></table>
+                </td></tr>
+                <tr><td style="padding:0 0 12px;">
+                  <table cellpadding="0" cellspacing="0"><tr>
+                    <td style="width:28px;vertical-align:top;padding-top:1px;">
+                      <span style="display:inline-block;width:20px;height:20px;background:#0b3d2e;color:#fff;border-radius:50%;font-size:11px;font-weight:bold;text-align:center;line-height:20px;">3</span>
+                    </td>
+                    <td style="font-size:14px;line-height:1.5;color:#333333;">Once payment is verified, your enrollment is confirmed and we will be in touch with training dates.</td>
+                  </tr></table>
+                </td></tr>
+              </table>
+
+              <p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:#444444;">
+                Questions? Call us on <a href="tel:0392551632" style="color:#0b3d2e;font-weight:bold;text-decoration:none;">039 255 1632</a> or <a href="tel:0730749820" style="color:#0b3d2e;font-weight:bold;text-decoration:none;">073 074 9820</a>.
+              </p>
+
+              <p style="margin:20px 0 0;font-size:15px;line-height:1.6;">
+                We look forward to welcoming you.<br/>
+                <strong>Liko Security Training</strong>
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#f4f7f5;border-top:1px solid #e0ebe5;padding:16px 32px;">
+              <p style="margin:0;font-size:11px;color:#888888;line-height:1.6;">
+                PSIRA No. 4509070 &nbsp;|&nbsp; Centre No. 4333985 &nbsp;|&nbsp; Reg. 2022/302006/07<br/>
+                This email was sent to <strong><%= applicantEmail %></strong> because you submitted an application on the Liko Security Training portal.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
