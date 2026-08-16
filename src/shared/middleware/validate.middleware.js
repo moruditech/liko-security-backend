@@ -18,8 +18,17 @@ function validate(schema, property = 'body') {
     });
 
     if (error) {
-      const errors = error.details.map((d) => d.message.replace(/"/g, ''));
-      return next(ApiError.badRequest('Validation failed', errors));
+      // Emit {field, message} objects so the frontend can map each error to the
+      // correct field and show it inline. d.path is an array like ['address','city']
+      // — joined with '.' to produce 'address.city', matching how ApplicationForm
+      // does byField[fieldError.field]. Previously this was plain strings, which
+      // meant the frontend's byField map was always empty and users only ever saw
+      // the generic banner with no indication of which field was wrong.
+      const errors = error.details.map((d) => ({
+        field: d.path.join('.'),
+        message: d.message.replace(/"/g, ''),
+      }));
+      return next(ApiError.badRequest('Please check the form and try again.', errors));
     }
 
     req[property] = value;
