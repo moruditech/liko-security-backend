@@ -1,5 +1,7 @@
 'use strict';
 
+const path = require('path');
+const ejs = require('ejs');
 const Invoice = require('./invoice.model');
 const applicationService = require('../applications/application.service');
 const { getSettings } = require('../settings/settings.service');
@@ -11,15 +13,18 @@ const { logAudit } = require('../auditLogs/auditLog.service');
 const { INVOICE_TYPE } = require('../../shared/constants/enums');
 
 const INVOICE_RESOURCE_TYPE = 'raw';
+const EMAIL_TEMPLATES_DIR = path.join(__dirname, '../../templates/email');
 
 /**
- * Builds the shared template data (course breakdown, PSIRA fee, banking details)
- * from a decrypted application. Used by both invoice types.
+ * Builds the shared template data (course breakdown, PSIRA fee, banking
+ * details) from a decrypted application. Used by both invoice types and the
+ * email templates.
  */
 async function buildTemplateData(application) {
   const settings = await getSettings();
   return {
     applicantName: `${application.firstName} ${application.lastName}`,
+    applicantEmail: application.email,
     referenceCode: application.referenceCode,
     courses: application.coursesSelected.map((c) => ({ grade: c.grade, title: c.title, fee: c.fee })),
     psiraFee: settings.psiraRegistrationFee,
@@ -32,44 +37,68 @@ async function buildTemplateData(application) {
 }
 
 /**
- * FR-APP-06 / FR-INV-01: triggered immediately on application submission.
- * NFR-PERF-03 requires the email to go out within 2 minutes — this runs
- * synchronously in the request lifecycle rather than a queued job, which is
- * acceptable at current expected volume (NFR-PERF-02: 20 concurrent submissions)
- * but flagged as a candidate for a job queue if submission volume grows.
+ * FR-APP-06: Sends both post-submission emails (acknowledgement + invoice)
+ * immediately after an application is saved. Called fire-and-forget from the
+ * controller so the applicant gets their success popup without waiting for
+ * Mailjet round-trips. Errors are logged but never bubble up to the response.
+ *
+ * Email 1 — Acknowledgement: confirms receipt, shows reference code, outlines
+ *   next steps.
+ * Email 2 — Invoice: inline HTML invoice with course breakdown, PSIRA fee,
+ *   total, and banking details. No PDF attachment. Includes "already paid?
+ *   ignore this" notice for applicants who paid upfront.
+ */
+async function sendApplicationEmails(applicationId) {
+  const application = await applicationService.getApplicationById(applicationId);
+  const data = await buildTemplateData(application);
+
+  const [acknowledgementHtml, invoiceHtml] = await Promise.all([
+    ejs.renderFile(path.join(EMAIL_TEMPLATES_DIR, 'acknowledgement.ejs'), data),
+    ejs.renderFile(path.join(EMAIL_TEMPLATES_DIR, 'invoice.ejs'), data),
+  ]);
+
+  await Promise.all([
+    sendEmail({
+      to: application.email,
+      toName: data.applicantName,
+      subject: `Application Received — ${application.referenceCode} | Liko Security Training`,
+      html: acknowledgementHtml,
+    }),
+    sendEmail({
+      to: application.email,
+      toName: data.applicantName,
+      subject: `Your Invoice & Payment Details — ${application.referenceCode} | Liko Security Training`,
+      html: invoiceHtml,
+    }),
+  ]);
+
+  await logAudit({
+    action: 'application.emails_sent',
+    targetType: 'Application',
+    targetId: applicationId,
+    metadata: { referenceCode: application.referenceCode },
+  });
+}
+
+/**
+ * FR-APP-06 / FR-INV-01: Creates the proforma Invoice record for admin
+ * tracking. Email delivery is handled separately by sendApplicationEmails()
+ * and is fired asynchronously from the controller — this function only
+ * concerns itself with persisting the invoice row.
  */
 async function generateProformaInvoice(applicationId) {
   const application = await applicationService.getApplicationById(applicationId);
-  const templateData = await buildTemplateData(application);
-
-  const pdfBuffer = await renderPdf('proforma-invoice', templateData);
-  const uploadResult = await uploadBuffer(pdfBuffer, {
-    private: true,
-    publicIdPrefix: `proforma-${application.referenceCode}`,
-    resourceType: INVOICE_RESOURCE_TYPE,
-  });
 
   const invoice = await Invoice.create({
     application: applicationId,
     type: INVOICE_TYPE.PROFORMA,
     referenceCode: application.referenceCode,
     amount: application.totalAmount,
-    pdfUrl: uploadResult.public_id,
     issuedAt: new Date(),
   });
 
-  await sendEmail({
-    to: application.email,
-    toName: templateData.applicantName,
-    subject: `Liko Security Training — Registration Summary (${application.referenceCode})`,
-    html: `<p>Dear ${templateData.applicantName},</p><p>Thank you for applying to Liko Security Training. Your registration summary and pro-forma invoice are attached, with payment reference <strong>${application.referenceCode}</strong>.</p>`,
-    attachments: [
-      { contentType: 'application/pdf', filename: `Proforma-Invoice-${application.referenceCode}.pdf`, base64Content: pdfBuffer.toString('base64') },
-    ],
-  });
-
   await logAudit({
-    action: 'invoice.proforma_generated_and_sent',
+    action: 'invoice.proforma_created',
     targetType: 'Invoice',
     targetId: invoice._id,
     metadata: { applicationId, referenceCode: application.referenceCode },
@@ -81,17 +110,10 @@ async function generateProformaInvoice(applicationId) {
 /**
  * FR-APP-09 / FR-INV-02: triggered on the payment_verified status transition.
  * IDEMPOTENT — re-triggering the same transition must never resend the email.
- * Enforced two ways: (1) the unique {application,type} index on Invoice prevents
- * a second official invoice row from ever being created; (2) we check for an
- * existing official invoice FIRST and short-circuit before doing any PDF/email
- * work, so a retry is a fast no-op rather than a caught duplicate-key error.
  */
 async function generateOfficialInvoice(applicationId) {
   const existing = await Invoice.findOne({ application: applicationId, type: INVOICE_TYPE.OFFICIAL });
-  if (existing) {
-    // Idempotency guard — this transition has already been processed.
-    return existing;
-  }
+  if (existing) return existing;
 
   const application = await applicationService.getApplicationById(applicationId);
   const templateData = await buildTemplateData(application);
@@ -115,8 +137,6 @@ async function generateOfficialInvoice(applicationId) {
     });
   } catch (err) {
     if (err.code === 11000) {
-      // Lost a race with a concurrent request for the same transition — fine,
-      // the other request's invoice is authoritative. Don't double-send email.
       return Invoice.findOne({ application: applicationId, type: INVOICE_TYPE.OFFICIAL });
     }
     throw err;
@@ -125,10 +145,14 @@ async function generateOfficialInvoice(applicationId) {
   await sendEmail({
     to: application.email,
     toName: templateData.applicantName,
-    subject: `Liko Security Training — Payment Confirmed & Enrollment (${application.referenceCode})`,
+    subject: `Payment Confirmed & Enrollment — ${application.referenceCode} | Liko Security Training`,
     html: `<p>Dear ${templateData.applicantName},</p><p>Your payment has been verified and your enrollment is confirmed. Your official invoice/receipt is attached.</p>`,
     attachments: [
-      { contentType: 'application/pdf', filename: `Official-Invoice-${application.referenceCode}.pdf`, base64Content: pdfBuffer.toString('base64') },
+      {
+        contentType: 'application/pdf',
+        filename: `Official-Invoice-${application.referenceCode}.pdf`,
+        base64Content: pdfBuffer.toString('base64'),
+      },
     ],
   });
 
@@ -147,10 +171,7 @@ async function listInvoicesForApplication(applicationId) {
 }
 
 /**
- * FR-INV-04: re-emails an EXISTING PDF without regenerating it — the durable
- * pdfUrl (Cloudinary public_id) makes this cheap. We re-fetch the applicant's
- * email fresh (rather than trusting a stale value) since email is encrypted
- * and could theoretically have been corrected between issuance and resend.
+ * FR-INV-04: re-emails an existing invoice without regenerating it.
  */
 async function resendInvoice(invoiceId, actorId) {
   const invoice = await Invoice.findById(invoiceId);
@@ -162,7 +183,7 @@ async function resendInvoice(invoiceId, actorId) {
   await sendEmail({
     to: application.email,
     toName: `${application.firstName} ${application.lastName}`,
-    subject: `Liko Security Training — Your Invoice (${invoice.referenceCode})`,
+    subject: `Your Invoice — ${invoice.referenceCode} | Liko Security Training`,
     html: `<p>Dear ${application.firstName},</p><p>As requested, here is a link to your ${invoice.type === INVOICE_TYPE.OFFICIAL ? 'official' : 'pro-forma'} invoice (link expires in 10 minutes):</p><p><a href="${signedUrl}">${signedUrl}</a></p>`,
   });
 
@@ -171,4 +192,10 @@ async function resendInvoice(invoiceId, actorId) {
   return invoice;
 }
 
-module.exports = { generateProformaInvoice, generateOfficialInvoice, listInvoicesForApplication, resendInvoice };
+module.exports = {
+  sendApplicationEmails,
+  generateProformaInvoice,
+  generateOfficialInvoice,
+  listInvoicesForApplication,
+  resendInvoice,
+};
