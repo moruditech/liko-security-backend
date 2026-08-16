@@ -69,7 +69,7 @@ async function toDecryptedJSON(appDoc) {
 
 function validateIdNumberFormat(idType, idNumber) {
   if (idType === ID_TYPE.SA_ID && !isValidSAId(idNumber)) {
-    throw ApiError.badRequest('Invalid South African ID number (checksum failed)');
+    throw ApiError.badRequest('Please enter a valid South African ID number.');
   }
   if (idType === ID_TYPE.PASSPORT && !isValidPassport(idNumber)) {
     throw ApiError.badRequest('Invalid passport number format');
