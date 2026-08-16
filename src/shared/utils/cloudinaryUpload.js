@@ -39,8 +39,13 @@ function uploadBuffer(buffer, { private: isPrivate = false, publicIdPrefix = '',
  * @param {string} publicId
  * @param {object} [options]
  * @param {number} [options.expiresInSeconds=300] - 5 minutes default
+ * @param {string} [options.resourceType='image'] - MUST be 'image'|'video'|'raw',
+ *   the only values Cloudinary's private_download_url (and the Admin API
+ *   endpoint it calls) accepts. 'auto' is an upload-time-only option and is
+ *   invalid here — passing it produces Cloudinary's generic
+ *   {"error":{"message":"General Error"}} response with no useful detail.
  */
-function getSignedUrl(publicId, { expiresInSeconds = 300, resourceType = 'auto' } = {}) {
+function getSignedUrl(publicId, { expiresInSeconds = 300, resourceType = 'image' } = {}) {
   const timestamp = Math.floor(Date.now() / 1000) + expiresInSeconds;
   return cloudinary.utils.private_download_url(publicId, undefined, {
     resource_type: resourceType,
