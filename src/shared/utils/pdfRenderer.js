@@ -2,59 +2,38 @@
 
 const path = require('path');
 const ejs = require('ejs');
-const puppeteer = require('puppeteer');
+const { renderPdf } = require('vellora');
 
 const TEMPLATES_DIR = path.join(__dirname, '../../templates/pdf');
 
-let browserPromise = null;
-
 /**
- * Puppeteer's browser instance is expensive to launch — reused across requests
- * rather than launched fresh per PDF. Lazily started on first use.
+ * Injects an @page rule into the rendered HTML so Vellora uses A4 with the
+ * same margins that were previously passed to Puppeteer's page.pdf(). The
+ * injection targets the closing </style> tag that every PDF template has, so
+ * template files themselves do not need to be modified.
  */
-function getBrowser() {
-  if (!browserPromise) {
-    browserPromise = puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'], // required in most containerized deploy targets
-    });
-  }
-  return browserPromise;
+function injectPageRule(html) {
+  const pageRule = '@page { size: A4; margin: 20mm 15mm; }\n';
+  return html.includes('</style>')
+    ? html.replace('</style>', pageRule + '</style>')
+    : html;
 }
 
 /**
  * Renders an EJS template (from src/templates/pdf/) with the given data into
- * a PDF buffer.
+ * a PDF buffer using Vellora — a native Node.js HTML-to-PDF renderer that
+ * requires no browser, no Chrome binary, and no postinstall step. Works on
+ * any environment including Render's free tier.
  *
  * @param {string} templateName - filename without extension, e.g. 'proforma-invoice'
- * @param {object} data - template variables
+ * @param {object} data - template variables passed to EJS
  * @returns {Promise<Buffer>}
  */
-async function renderPdf(templateName, data) {
+async function renderPdfFromTemplate(templateName, data) {
   const templatePath = path.join(TEMPLATES_DIR, `${templateName}.ejs`);
   const html = await ejs.renderFile(templatePath, data);
-
-  const browser = await getBrowser();
-  const page = await browser.newPage();
-  try {
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
-    });
-    return pdfBuffer;
-  } finally {
-    await page.close();
-  }
+  const htmlWithPage = injectPageRule(html);
+  return renderPdf(htmlWithPage);
 }
 
-async function closeBrowser() {
-  if (browserPromise) {
-    const browser = await browserPromise;
-    await browser.close();
-    browserPromise = null;
-  }
-}
-
-module.exports = { renderPdf, closeBrowser };
+module.exports = { renderPdf: renderPdfFromTemplate };
