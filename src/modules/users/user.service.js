@@ -19,6 +19,7 @@ async function toSafeJSON(userDoc) {
   return {
     id: obj._id,
     name: obj.name,
+    phone: obj.phone,
     email,
     // obj.role is the populated Role subdocument ({_id, name, permissions})
     // at every call site below, never a bare ObjectId — trimmed to {id, name}
@@ -45,7 +46,7 @@ async function getUserById(id) {
   return toSafeJSON(user);
 }
 
-async function createUser({ name, email, role, password }, actorId) {
+async function createUser({ name, email, role, password, phone }, actorId) {
   const roleDoc = await Role.findById(role);
   if (!roleDoc) throw ApiError.badRequest('Role does not exist');
 
@@ -58,6 +59,7 @@ async function createUser({ name, email, role, password }, actorId) {
 
   const user = await User.create({
     name,
+    phone: phone || null,
     email_enc: emailEnc,
     email_bidx: emailBidx,
     role: roleDoc._id,
@@ -74,6 +76,7 @@ async function updateUser(id, updates, actorId) {
   if (!user) throw ApiError.notFound('User not found');
 
   if (updates.name) user.name = updates.name;
+  if (updates.phone !== undefined) user.phone = updates.phone || null;
 
   if (updates.email) {
     const emailBidx = await blindIndex.computeBlindIndex(updates.email);

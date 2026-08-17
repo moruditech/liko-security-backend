@@ -13,6 +13,7 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
+    phone: { type: String, default: null, trim: true }, // plain — internal staff contact, not applicant PII
 
     email_enc: { type: String, required: true }, // AES-256-GCM
     email_bidx: { type: String, required: true, unique: true, index: true }, // HMAC-SHA-256, searchable
