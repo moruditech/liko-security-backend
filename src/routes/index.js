@@ -3,6 +3,7 @@
 const express = require('express');
 
 const authRoutes = require('../modules/auth/auth.routes');
+const profileRoutes = require('../modules/profile/profile.routes');
 const userRoutes = require('../modules/users/user.routes');
 const roleRoutes = require('../modules/roles/role.routes');
 const applicationRoutes = require('../modules/applications/application.routes');
@@ -28,6 +29,7 @@ const router = express.Router();
 router.get('/health', (req, res) => res.status(200).json({ success: true, data: { status: 'ok' }, message: 'Liko backend is running' }));
 
 router.use('/auth', authRoutes);
+router.use('/profile', profileRoutes);
 router.use('/users', userRoutes);
 router.use('/roles', roleRoutes);
 router.use('/applications', applicationRoutes);
