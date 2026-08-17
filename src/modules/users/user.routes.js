@@ -16,5 +16,6 @@ router.get('/:id', validate(userValidation.paramsId, 'params'), userController.g
 router.post('/', validate(userValidation.createUser), userController.create);
 router.patch('/:id', validate(userValidation.paramsId, 'params'), validate(userValidation.updateUser), userController.update);
 router.patch('/:id/deactivate', validate(userValidation.paramsId, 'params'), userController.deactivate);
+router.patch('/:id/reactivate', validate(userValidation.paramsId, 'params'), userController.reactivate);
 
 module.exports = router;

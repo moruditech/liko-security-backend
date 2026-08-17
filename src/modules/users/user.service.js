@@ -106,4 +106,17 @@ async function deactivateUser(id, actorId) {
   await logAudit({ actor: actorId, action: 'user.deactivated', targetType: 'User', targetId: id });
 }
 
-module.exports = { listUsers, getUserById, createUser, updateUser, deactivateUser, toSafeJSON };
+// Symmetrical with deactivateUser — no session revocation needed here since
+// deactivation already cleared refreshTokens; a reactivated user simply logs
+// in fresh.
+async function reactivateUser(id, actorId) {
+  const user = await User.findById(id);
+  if (!user) throw ApiError.notFound('User not found');
+
+  user.isActive = true;
+  await user.save();
+
+  await logAudit({ actor: actorId, action: 'user.reactivated', targetType: 'User', targetId: id });
+}
+
+module.exports = { listUsers, getUserById, createUser, updateUser, deactivateUser, reactivateUser, toSafeJSON };

@@ -30,4 +30,9 @@ const deactivate = asyncHandler(async (req, res) => {
   new ApiResponse(null, 'User deactivated').send(res, 200);
 });
 
-module.exports = { list, getById, create, update, deactivate };
+const reactivate = asyncHandler(async (req, res) => {
+  await userService.reactivateUser(req.params.id, req.user.id);
+  new ApiResponse(null, 'User reactivated').send(res, 200);
+});
+
+module.exports = { list, getById, create, update, deactivate, reactivate };
