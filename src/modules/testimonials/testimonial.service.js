@@ -16,18 +16,6 @@ async function getTestimonialById(id) {
   return testimonial;
 }
 
-async function createTestimonial(data, file, actorId) {
-  let photoUrl = null;
-  if (file) {
-    const result = await uploadBuffer(file.buffer, { private: false, publicIdPrefix: 'testimonial', resourceType: 'image' });
-    photoUrl = result.secure_url;
-  }
-
-  const testimonial = await Testimonial.create({ ...data, photoUrl });
-  await logAudit({ actor: actorId, action: 'testimonial.created', targetType: 'Testimonial', targetId: testimonial._id });
-  return testimonial;
-}
-
 // PUT semantics — studentName/courseGrade/quote all required (full replace).
 // Photo is optional on replace: if a new file is provided it's swapped in,
 // otherwise the existing photoUrl is left untouched.
